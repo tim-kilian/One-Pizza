@@ -11,6 +11,7 @@ vector<string> out;
 int main() {
   int n;
   cin >> n;
+
   for (int j = 0; j < n; j++) {
     int likes, dislikes;
     cin >> likes;
@@ -26,13 +27,17 @@ int main() {
       vals[local] -= (1 / (double)dislikes);
     }
   }
+
   for (auto it : vals) {
     if (it.second > 0)
       out.push_back(it.first);
   }
+
   cout << out.size() << " ";
+
   for (auto it : out) {
     cout << it << " ";
   }
+  
   return 0;
 }
