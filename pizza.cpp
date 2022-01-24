@@ -23,14 +23,11 @@ struct Client {
 vector<Client> clients;
 
 int deepest = 0;
-string deepest_ingredients = "";
 set<string> output;
 
 void compute_children(Client *parent, vector<Client> *children,
                       map<string, bool> dislikes_map, set<string> ingredients,
                       int layer);
-
-int deepest_layer = 0;
 
 int main() {
   int C;
@@ -102,8 +99,8 @@ void compute_children(Client *parent, vector<Client> *children,
     }
   }
 
-  if (layer > deepest_layer) {
-    deepest_layer = layer;
+  if (layer > deepest) {
+    deepest = layer;
     output = ingredients;
   }
 
