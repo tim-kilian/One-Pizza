@@ -27,8 +27,7 @@ string deepest_ingredients = "";
 set<string> output;
 
 void compute_children(Client *parent, vector<Client> *children,
-                      map<string, bool> dislikes_map, set<string> ingredients,
-                      string ingredients_dump);
+                      map<string, bool> dislikes_map, set<string> ingredients);
 
 int main() {
   int C;
@@ -63,7 +62,7 @@ int main() {
 
   for (unsigned long x = 0; x < clients.size(); x++) {
     compute_children(&clients[x], &clients, clients[x].dislikes_map,
-                     set<string>(), "");
+                     set<string>());
   }
 
   cout << output.size();
@@ -76,8 +75,7 @@ int main() {
 }
 
 void compute_children(Client *parent, vector<Client> *children,
-                      map<string, bool> dislikes_map, set<string> ingredients,
-                      string ingredients_dump) {
+                      map<string, bool> dislikes_map, set<string> ingredients) {
   vector<Client> clients = *children;
 
   for (unsigned long y = 0; y < clients.size(); y++) {
@@ -116,6 +114,6 @@ void compute_children(Client *parent, vector<Client> *children,
     }
 
     compute_children(&parent->children[x], &parent->children, next_dislikes_map,
-                     ingredients, ingredients_dump);
+                     ingredients);
   }
 }
