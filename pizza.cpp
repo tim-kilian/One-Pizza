@@ -6,6 +6,8 @@
 #include <string>
 #include <vector>
 
+#include <omp.h>
+
 using namespace std;
 
 struct Client {
@@ -16,8 +18,6 @@ struct Client {
   vector<string> dislikes;
   map<string, bool> likes_map;
   map<string, bool> dislikes_map;
-
-  vector<Client> children;
 };
 
 vector<Client> clients;
@@ -25,9 +25,11 @@ vector<Client> clients;
 int deepest = 0;
 set<string> output;
 
-void compute_children(Client *parent, vector<Client> *children,
+void compute_children(Client *parent, map<unsigned long, bool> visited,
                       map<string, bool> dislikes_map, set<string> ingredients,
                       int layer);
+
+map<unsigned long, int> visited_paths;
 
 int main() {
   int C;
@@ -60,9 +62,16 @@ int main() {
     }
   }
 
-  for (unsigned long x = 0; x < clients.size(); x++) {
-    compute_children(&clients[x], &clients, clients[x].dislikes_map,
-                     set<string>(), 1);
+#pragma omp parallel
+  {
+
+#pragma omp for
+    for (unsigned long x = 0; x < clients.size(); x++) {
+      map<unsigned long, bool> visited;
+      visited[clients[x].id] = true;
+      compute_children(&clients[x], visited, clients[x].dislikes_map,
+                       set<string>(), 1);
+    }
   }
 
   cout << output.size();
@@ -74,29 +83,26 @@ int main() {
   return 0;
 }
 
-void compute_children(Client *parent, vector<Client> *children,
+bool check(set<string> ingredients, Client *client,
+           map<string, bool> dislikes_map) {
+  for (auto ingredient : ingredients) {
+    if (dislikes_map.count(ingredient)) {
+      return false;
+    }
+  }
+  for (auto ingredient : client->likes) {
+    if (dislikes_map.count(ingredient)) {
+      return false;
+    }
+  }
+  return true;
+}
+
+void compute_children(Client *client_x, map<unsigned long, bool> visited,
                       map<string, bool> dislikes_map, set<string> ingredients,
                       int layer) {
-  vector<Client> clients = *children;
-
-  for (unsigned long y = 0; y < clients.size(); y++) {
-    if (parent->id == clients[y].id) {
-      continue;
-    }
-
-    bool is_candidate = true;
-    for (unsigned long i = 0; i < parent->likes.size(); i++) {
-      if (clients[y].dislikes_map.count(parent->likes[i]) ||
-          dislikes_map.count(parent->likes[i])) {
-        is_candidate = false;
-        break;
-      }
-    }
-
-    if (is_candidate) {
-      clients[y].children = vector<Client>();
-      parent->children.push_back(clients[y]);
-    }
+  for (unsigned long i = 0; i < client_x->likes.size(); i++) {
+    ingredients.insert(client_x->likes[i]);
   }
 
   if (layer > deepest) {
@@ -104,18 +110,18 @@ void compute_children(Client *parent, vector<Client> *children,
     output = ingredients;
   }
 
-  for (unsigned long i = 0; i < parent->likes.size(); i++) {
-    ingredients.insert(parent->likes[i]);
-  }
+  for (unsigned long y = 0; y < clients.size(); y++) {
+    if (!visited.count(clients[y].id)) {
+      map<string, bool> next_dislikes_map = dislikes_map;
+      for (unsigned long i = 0; i < clients[y].dislikes.size(); i++) {
+        next_dislikes_map[clients[y].dislikes[i]] = true;
+      }
 
-  for (unsigned long x = 0; x < parent->children.size(); x++) {
-    map<string, bool> next_dislikes_map = dislikes_map;
-
-    for (unsigned long i = 0; i < parent->children[x].dislikes.size(); i++) {
-      next_dislikes_map[parent->children[x].dislikes[i]] = true;
+      if (check(ingredients, &clients[y], next_dislikes_map)) {
+        visited[clients[y].id] = true;
+        compute_children(&clients[y], visited, next_dislikes_map, ingredients,
+                         layer + 1);
+      }
     }
-
-    compute_children(&parent->children[x], &parent->children, next_dislikes_map,
-                     ingredients, layer + 1);
   }
 }
