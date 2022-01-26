@@ -25,6 +25,8 @@ vector<Client> clients;
 int deepest = 0;
 set<string> output;
 
+bool debug = false;
+
 void compute_children(Client *parent, map<unsigned long, bool> visited,
                       map<string, bool> dislikes_map, set<string> ingredients,
                       int layer);
@@ -74,6 +76,9 @@ int main() {
     }
   }
 
+  if (debug) {
+    cout << deepest << " ";
+  }
   cout << output.size();
 
   for (auto out : output) {
@@ -108,19 +113,30 @@ void compute_children(Client *client_x, map<unsigned long, bool> visited,
   if (layer > deepest) {
     deepest = layer;
     output = ingredients;
+
+    if (debug) {
+      cout << deepest << " " << output.size();
+
+      for (auto out : output) {
+        cout << " " << out;
+      }
+      cout << endl;
+    }
   }
 
   for (unsigned long y = 0; y < clients.size(); y++) {
-    if (!visited.count(clients[y].id)) {
+    map<unsigned long, bool> next_visited(visited);
+    if (!next_visited.count(clients[y].id)) {
+      next_visited[clients[y].id] = true;
+
       map<string, bool> next_dislikes_map = dislikes_map;
       for (unsigned long i = 0; i < clients[y].dislikes.size(); i++) {
         next_dislikes_map[clients[y].dislikes[i]] = true;
       }
 
       if (check(ingredients, &clients[y], next_dislikes_map)) {
-        visited[clients[y].id] = true;
-        compute_children(&clients[y], visited, next_dislikes_map, ingredients,
-                         layer + 1);
+        compute_children(&clients[y], next_visited, next_dislikes_map,
+                         ingredients, layer + 1);
       }
     }
   }
